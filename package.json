@@ -1,0 +1,24 @@
+{
+  "name": "echo-monitor-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@discordjs/rest": "^2.6.1",
+    "apify-client": "^2.25.0",
+    "better-sqlite3": "^12.11.1",
+    "discord-api-types": "^0.38.49",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "sharp": "^0.35.3",
+    "sqlite3": "^6.0.1"
+  }
+}
