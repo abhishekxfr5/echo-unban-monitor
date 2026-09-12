@@ -14,8 +14,7 @@ function formatNumber(num) {
     return "0";
   }
 
-  const n =
-    Number(String(num).replace(/,/g, "")) || 0;
+  const n = Number(String(num).replace(/,/g, "")) || 0;
 
   if (n >= 1000000) {
     return (
@@ -48,41 +47,28 @@ async function createProfileCard(profile = {}) {
     profile.username || "username"
   ).replace(/^@/, "");
 
-  const fullName =
-    profile.fullName || username;
-
-  const posts = formatNumber(
-    profile.postsCount
+  const fullName = String(
+    profile.fullName || username
   );
 
-  const followers = formatNumber(
-    profile.followersCount
-  );
-
-  const following = formatNumber(
-    profile.followingCount
-  );
+  const posts = formatNumber(profile.postsCount);
+  const followers = formatNumber(profile.followersCount);
+  const following = formatNumber(profile.followingCount);
 
   const profilePicUrl =
     profile.profilePicUrl ||
     profile.profilePic ||
     null;
 
-  const verified = Boolean(
-    profile.verified
-  );
+  const verified = Boolean(profile.verified);
 
   // =========================================
-  // PROFILE PHOTO
+  // LAYOUT
   // =========================================
 
   const DP_X = 55;
   const DP_Y = 48;
   const DP_SIZE = 125;
-
-  // =========================================
-  // MAIN CONTENT
-  // =========================================
 
   const CONTENT_X = 245;
 
@@ -90,7 +76,15 @@ async function createProfileCard(profile = {}) {
   const USERNAME_SIZE = 30;
 
   // =========================================
-  // MEASURE REAL USERNAME WIDTH
+  // FONT
+  // Railway/Linux friendly font
+  // =========================================
+
+  const FONT = "DejaVu Sans, sans-serif";
+  const FONT_BOLD = "DejaVu Sans";
+
+  // =========================================
+  // MEASURE USERNAME WIDTH
   // =========================================
 
   const usernameSvg = `
@@ -102,7 +96,7 @@ async function createProfileCard(profile = {}) {
       <text
         x="0"
         y="65"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="${USERNAME_SIZE}px"
         font-weight="700"
         fill="#ffffff"
@@ -110,8 +104,10 @@ async function createProfileCard(profile = {}) {
     </svg>
   `;
 
-  const measuredUsername =
-    await sharp(
+  let usernameWidth = 100;
+
+  try {
+    const measuredUsername = await sharp(
       Buffer.from(usernameSvg)
     )
       .png()
@@ -120,11 +116,17 @@ async function createProfileCard(profile = {}) {
         resolveWithObject: true,
       });
 
-  const usernameWidth =
-    measuredUsername.info.width || 100;
+    usernameWidth =
+      measuredUsername.info.width || 100;
+  } catch (error) {
+    console.log(
+      "⚠️ Username width measurement failed:",
+      error.message
+    );
+  }
 
   // =========================================
-  // VERIFIED BADGE POSITION
+  // VERIFIED BADGE
   // =========================================
 
   const BADGE_SIZE = 30;
@@ -171,8 +173,7 @@ async function createProfileCard(profile = {}) {
 
   if (profilePicUrl) {
     try {
-      const response =
-        await fetch(profilePicUrl);
+      const response = await fetch(profilePicUrl);
 
       if (response.ok) {
         avatarBuffer = Buffer.from(
@@ -201,11 +202,12 @@ async function createProfileCard(profile = {}) {
   `;
 
   if (avatarBuffer) {
+    const avatarBase64 =
+      avatarBuffer.toString("base64");
+
     avatarSvg = `
       <image
-        href="data:image/jpeg;base64,${avatarBuffer.toString(
-          "base64"
-        )}"
+        href="data:image/jpeg;base64,${avatarBase64}"
         x="${DP_X}"
         y="${DP_Y}"
         width="${DP_SIZE}"
@@ -217,14 +219,12 @@ async function createProfileCard(profile = {}) {
   }
 
   // =========================================
-  // INSTAGRAM STYLE VERIFIED BADGE
+  // VERIFIED BADGE
   // =========================================
 
   const verifiedBadge = verified
     ? `
       <g>
-
-        <!-- BLUE VERIFICATION ROSETTE -->
 
         <path
           d="
@@ -261,18 +261,13 @@ async function createProfileCard(profile = {}) {
           fill="#3797F0"
         />
 
-        <!-- WHITE CHECK -->
-
         <path
           d="
-            M ${badgeCX - 8}
-              ${badgeCY}
+            M ${badgeCX - 8} ${badgeCY}
 
-            L ${badgeCX - 2}
-              ${badgeCY + 6}
+            L ${badgeCX - 2} ${badgeCY + 6}
 
-            L ${badgeCX + 9}
-              ${badgeCY - 7}
+            L ${badgeCX + 9} ${badgeCY - 7}
           "
           fill="none"
           stroke="#ffffff"
@@ -296,23 +291,6 @@ async function createProfileCard(profile = {}) {
       xmlns="http://www.w3.org/2000/svg"
     >
 
-      <!-- ================================= -->
-      <!-- BLACK ROUNDED CARD -->
-      <!-- ================================= -->
-
-      <rect
-        x="0"
-        y="0"
-        width="${WIDTH}"
-        height="${HEIGHT}"
-        rx="18"
-        fill="#000000"
-      />
-
-      <!-- ================================= -->
-      <!-- PROFILE PHOTO CLIP -->
-      <!-- ================================= -->
-
       <defs>
         <clipPath id="avatarClip">
           <circle
@@ -323,18 +301,27 @@ async function createProfileCard(profile = {}) {
         </clipPath>
       </defs>
 
+      <!-- BLACK ROUNDED CARD -->
+
+      <rect
+        x="0"
+        y="0"
+        width="${WIDTH}"
+        height="${HEIGHT}"
+        rx="18"
+        fill="#000000"
+      />
+
       <!-- PROFILE PHOTO -->
 
       ${avatarSvg}
 
-      <!-- ================================= -->
       <!-- USERNAME -->
-      <!-- ================================= -->
 
       <text
         x="${CONTENT_X}"
         y="${USERNAME_Y}"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="${USERNAME_SIZE}px"
         font-weight="700"
         fill="#ffffff"
@@ -344,9 +331,7 @@ async function createProfileCard(profile = {}) {
 
       ${verifiedBadge}
 
-      <!-- ================================= -->
       <!-- FOLLOW BUTTON -->
-      <!-- ================================= -->
 
       <rect
         x="${followX}"
@@ -361,35 +346,29 @@ async function createProfileCard(profile = {}) {
         x="${followX + FOLLOW_WIDTH / 2}"
         y="67"
         text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="16px"
         font-weight="700"
         fill="#ffffff"
       >Follow</text>
 
-      <!-- ================================= -->
       <!-- THREE DOTS -->
-      <!-- ================================= -->
 
       <text
         x="${dotsX}"
         y="69"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="27px"
         font-weight="700"
         fill="#ffffff"
       >•••</text>
-
-      <!-- ================================= -->
-      <!-- STATS NUMBERS -->
-      <!-- ================================= -->
 
       <!-- POSTS -->
 
       <text
         x="${CONTENT_X}"
         y="116"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="24px"
         font-weight="700"
         fill="#ffffff"
@@ -400,7 +379,7 @@ async function createProfileCard(profile = {}) {
       <text
         x="410"
         y="116"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="24px"
         font-weight="700"
         fill="#ffffff"
@@ -411,20 +390,18 @@ async function createProfileCard(profile = {}) {
       <text
         x="635"
         y="116"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="24px"
         font-weight="700"
         fill="#ffffff"
       >${escapeXml(following)}</text>
 
-      <!-- ================================= -->
       <!-- STATS LABELS -->
-      <!-- ================================= -->
 
       <text
         x="${CONTENT_X}"
         y="143"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="15px"
         fill="#a8a8a8"
       >posts</text>
@@ -432,7 +409,7 @@ async function createProfileCard(profile = {}) {
       <text
         x="410"
         y="143"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="15px"
         fill="#a8a8a8"
       >followers</text>
@@ -440,19 +417,17 @@ async function createProfileCard(profile = {}) {
       <text
         x="635"
         y="143"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="15px"
         fill="#a8a8a8"
       >following</text>
 
-      <!-- ================================= -->
-      <!-- FULL NAME BELOW STATS -->
-      <!-- ================================= -->
+      <!-- FULL NAME -->
 
       <text
         x="${CONTENT_X}"
         y="180"
-        font-family="Arial, Helvetica, sans-serif"
+        font-family="${FONT}"
         font-size="19px"
         font-weight="700"
         fill="#ffffff"
@@ -462,7 +437,7 @@ async function createProfileCard(profile = {}) {
   `;
 
   // =========================================
-  // RETURN PNG BUFFER
+  // RETURN PNG
   // =========================================
 
   return await sharp(

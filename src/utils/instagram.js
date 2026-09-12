@@ -9,46 +9,63 @@ async function getInstagramAccount(username) {
     .replace(/^@/, "")
     .trim();
 
+  if (!cleanUsername) {
+    console.log("❌ Empty Instagram username");
+    return null;
+  }
+
   try {
-    console.log(`🔍 Fetching @${cleanUsername} from Apify...`);
+    console.log(
+      `🔍 Fetching Instagram @${cleanUsername} from Apify...`
+    );
 
     const input = {
       usernames: [cleanUsername],
       includeAboutSection: false,
     };
 
+    console.log(
+      "🚀 Starting Apify Instagram Profile Scraper..."
+    );
+
     const run = await client
-      .actor("dSCLg0C3YEZ83HzYX")
+      .actor("apify/instagram-profile-scraper")
       .call(input);
+
+    console.log(`✅ Apify run finished: ${run.id}`);
 
     const { items } = await client
       .dataset(run.defaultDatasetId)
       .listItems();
 
+    console.log(
+      `📦 Apify returned ${items?.length || 0} profile(s) for @${cleanUsername}`
+    );
+
     if (!items || items.length === 0) {
-      console.log(`❌ No data returned for @${cleanUsername}`);
+      console.log(
+        `❌ No Instagram profile data found for @${cleanUsername}`
+      );
+
       return null;
     }
 
     const profile = items[0];
 
-    console.log("📦 APIFY PROFILE DATA:", profile);
+    console.log("📦 INSTAGRAM PROFILE:", {
+      username: profile.username,
+      fullName: profile.fullName,
+      followersCount: profile.followersCount,
+      followsCount: profile.followsCount,
+      postsCount: profile.postsCount,
+      profilePicUrl: profile.profilePicUrl,
+      profilePicUrlHD: profile.profilePicUrlHD,
+      verified: profile.verified,
+    });
 
-    // IMPORTANT FIX:
-    // Apify sometimes returns an item with error:not_found.
-    // Do NOT treat that as a valid Instagram profile.
-    if (
-      profile.error ||
-      !profile.username ||
-      (
-        profile.followersCount === undefined &&
-        profile.profilePicUrl === undefined &&
-        profile.profilePicUrlHD === undefined
-      )
-    ) {
+    if (!profile.username) {
       console.log(
-        `❌ Invalid/not-found Instagram profile @${cleanUsername}:`,
-        profile.errorDescription || profile.error || "No profile data"
+        `❌ Invalid Instagram profile returned for @${cleanUsername}`
       );
 
       return null;
@@ -86,23 +103,32 @@ async function getInstagramAccount(username) {
       profile.isVerified ??
       false;
 
-    console.log(`✅ Instagram profile valid: @${cleanUsername}`);
+    console.log(
+      `✅ Instagram profile valid: @${cleanUsername}`
+    );
+
     console.log({
+      username: profile.username,
+      fullName,
       followers,
       following,
       posts,
-      profilePicUrl,
-      verified,
+      profilePicUrl: Boolean(profilePicUrl),
+      verified: Boolean(verified),
     });
 
     return {
       username: profile.username || cleanUsername,
+
       fullName,
 
       followers,
       followersCount: followers,
 
+      following,
       followingCount: following,
+
+      posts,
       postsCount: posts,
 
       profilePicUrl,
@@ -111,9 +137,10 @@ async function getInstagramAccount(username) {
     };
   } catch (error) {
     console.error(
-      `❌ Instagram fetch failed for @${cleanUsername}:`,
-      error
+      `❌ Instagram fetch failed for @${cleanUsername}:`
     );
+
+    console.error(error);
 
     return null;
   }

@@ -59,25 +59,37 @@ function formatDuration(startTime) {
   );
 
   const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const hours = Math.floor(
+    (totalSeconds % 86400) / 3600
+  );
+  const minutes = Math.floor(
+    (totalSeconds % 3600) / 60
+  );
   const seconds = totalSeconds % 60;
 
   const parts = [];
 
   if (days) {
-    parts.push(`${days} day${days === 1 ? "" : "s"}`);
+    parts.push(
+      `${days} day${days === 1 ? "" : "s"}`
+    );
   }
 
   if (hours) {
-    parts.push(`${hours} hour${hours === 1 ? "" : "s"}`);
+    parts.push(
+      `${hours} hour${hours === 1 ? "" : "s"}`
+    );
   }
 
   if (minutes) {
-    parts.push(`${minutes} minute${minutes === 1 ? "" : "s"}`);
+    parts.push(
+      `${minutes} minute${minutes === 1 ? "" : "s"}`
+    );
   }
 
-  parts.push(`${seconds} second${seconds === 1 ? "" : "s"}`);
+  parts.push(
+    `${seconds} second${seconds === 1 ? "" : "s"}`
+  );
 
   return parts.join(", ");
 }
@@ -87,11 +99,17 @@ function formatDuration(startTime) {
 ========================= */
 
 function formatFollowers(value) {
-  if (value === null || value === undefined || value === "") {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
     return "N/A";
   }
 
-  const cleaned = String(value).replace(/,/g, "").trim();
+  const cleaned = String(value)
+    .replace(/,/g, "")
+    .trim();
 
   if (!/^\d+$/.test(cleaned)) {
     return String(value);
@@ -110,7 +128,13 @@ function parseTimer(input) {
   const value = input.toLowerCase().trim();
 
   if (
-    ["off", "none", "disable", "disabled", "0"].includes(value)
+    [
+      "off",
+      "none",
+      "disable",
+      "disabled",
+      "0",
+    ].includes(value)
   ) {
     return null;
   }
@@ -127,23 +151,30 @@ function parseTimer(input) {
     const amount = Number(match[1]);
 
     if (match[2] === "d") {
-      totalMilliseconds += amount * 86400000;
+      totalMilliseconds +=
+        amount * 86400000;
     }
 
     if (match[2] === "h") {
-      totalMilliseconds += amount * 3600000;
+      totalMilliseconds +=
+        amount * 3600000;
     }
 
     if (match[2] === "m") {
-      totalMilliseconds += amount * 60000;
+      totalMilliseconds +=
+        amount * 60000;
     }
 
     if (match[2] === "s") {
-      totalMilliseconds += amount * 1000;
+      totalMilliseconds +=
+        amount * 1000;
     }
   }
 
-  if (!found || totalMilliseconds <= 0) {
+  if (
+    !found ||
+    totalMilliseconds <= 0
+  ) {
     return undefined;
   }
 
@@ -157,19 +188,25 @@ function parseTimer(input) {
 function createButtons(monitorId) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`monitor_edit:${monitorId}`)
+      .setCustomId(
+        `monitor_edit:${monitorId}`
+      )
       .setLabel("Edit")
       .setEmoji("✏️")
       .setStyle(ButtonStyle.Primary),
 
     new ButtonBuilder()
-      .setCustomId(`monitor_complete:${monitorId}`)
+      .setCustomId(
+        `monitor_complete:${monitorId}`
+      )
       .setLabel("Complete")
       .setEmoji("✅")
       .setStyle(ButtonStyle.Success),
 
     new ButtonBuilder()
-      .setCustomId(`monitor_delete:${monitorId}`)
+      .setCustomId(
+        `monitor_delete:${monitorId}`
+      )
       .setLabel("Delete")
       .setEmoji("🗑️")
       .setStyle(ButtonStyle.Danger)
@@ -180,32 +217,58 @@ function createButtons(monitorId) {
    AUTO TIMER TEXT
 ========================= */
 
-function getAutoTimerText(autoCompleteAt) {
+function getAutoTimerText(
+  autoCompleteAt
+) {
   if (!autoCompleteAt) {
     return "Off";
   }
 
   const secondsLeft = Math.max(
     0,
-    Math.floor((Number(autoCompleteAt) - Date.now()) / 1000)
+    Math.floor(
+      (Number(autoCompleteAt) -
+        Date.now()) /
+        1000
+    )
   );
 
   if (secondsLeft <= 0) {
     return "Completing...";
   }
 
-  const days = Math.floor(secondsLeft / 86400);
-  const hours = Math.floor((secondsLeft % 86400) / 3600);
-  const minutes = Math.floor((secondsLeft % 3600) / 60);
+  const days = Math.floor(
+    secondsLeft / 86400
+  );
+
+  const hours = Math.floor(
+    (secondsLeft % 86400) / 3600
+  );
+
+  const minutes = Math.floor(
+    (secondsLeft % 3600) / 60
+  );
+
   const seconds = secondsLeft % 60;
 
   const pieces = [];
 
-  if (days) pieces.push(`${days}d`);
-  if (hours) pieces.push(`${hours}h`);
-  if (minutes) pieces.push(`${minutes}m`);
+  if (days) {
+    pieces.push(`${days}d`);
+  }
 
-  if (seconds || !pieces.length) {
+  if (hours) {
+    pieces.push(`${hours}h`);
+  }
+
+  if (minutes) {
+    pieces.push(`${minutes}m`);
+  }
+
+  if (
+    seconds ||
+    !pieces.length
+  ) {
     pieces.push(`${seconds}s`);
   }
 
@@ -217,24 +280,38 @@ function getAutoTimerText(autoCompleteAt) {
 ========================= */
 
 function createMonitorEmbed(data) {
-  const lastChecked = data.last_checked_at
-    ? `<t:${Math.floor(Number(data.last_checked_at) / 1000)}:R>`
-    : "Not checked yet";
+  const lastChecked =
+    data.last_checked_at
+      ? `<t:${Math.floor(
+          Number(
+            data.last_checked_at
+          ) / 1000
+        )}:R>`
+      : "Not checked yet";
 
-  const streak = Number(data.recovery_streak || 0);
+  const streak = Number(
+    data.recovery_streak || 0
+  );
 
   return new EmbedBuilder()
     .setColor(0x2b2d31)
     .setAuthor({
       name: "Echo Unban Monitor",
-      iconURL: client.user?.displayAvatarURL(),
+      iconURL:
+        client.user?.displayAvatarURL(),
     })
     .setDescription(
       `**Username:** @${data.username}\n` +
-        `**Status:** ${data.status || "Monitoring"}\n` +
-        `**Followers:** ${formatFollowers(data.followers)}\n` +
+        `**Status:** ${
+          data.status || "Monitoring"
+        }\n` +
+        `**Followers:** ${formatFollowers(
+          data.followers
+        )}\n` +
         `**Time:** Running\n` +
-        `**Review:** ${data.review || "Under review"}\n` +
+        `**Review:** ${
+          data.review || "Under review"
+        }\n` +
         `**Live Monitor:** 🟢 ON\n` +
         `**Recovery Check:** ${streak}/${RECOVERY_CONFIRMATIONS}\n` +
         `**Last Check:** ${lastChecked}\n` +
@@ -244,7 +321,8 @@ function createMonitorEmbed(data) {
     )
     .setTimestamp()
     .setFooter({
-      text: "Echo Monitor • Live Instagram Monitoring",
+      text:
+        "Echo Monitor • Live Instagram Monitoring",
     });
 }
 
@@ -252,38 +330,70 @@ function createMonitorEmbed(data) {
    SAVED PROFILE CARD
 ========================= */
 
-async function getSavedCardAttachment(monitorId) {
+async function getSavedCardAttachment(
+  monitorId
+) {
   const cardPath = path.join(
     PROFILE_CARDS_DIR,
     `${monitorId}.png`
   );
 
   if (!fs.existsSync(cardPath)) {
+    console.log(
+      `⚠️ Saved profile card not found: ${cardPath}`
+    );
+
     return null;
   }
 
-  return new AttachmentBuilder(cardPath, {
-    name: "instagram-profile.png",
-  });
+  console.log(
+    `📎 Using saved profile card: ${cardPath}`
+  );
+
+  return new AttachmentBuilder(
+    cardPath,
+    {
+      name: "instagram-profile.png",
+    }
+  );
 }
 
 /* =========================
    CREATE FRESH PROFILE CARD
 ========================= */
 
-async function saveFreshProfileCard(monitorId, profile) {
+async function saveFreshProfileCard(
+  monitorId,
+  profile
+) {
   if (!profile) {
+    console.log(
+      "⚠️ Cannot create profile card: profile is null"
+    );
+
     return null;
   }
 
   try {
-    const buffer = await createProfileCard(profile);
+    console.log(
+      `🎨 Generating profile card for @${profile.username}...`
+    );
+
+    const buffer =
+      await createProfileCard(profile);
 
     if (!Buffer.isBuffer(buffer)) {
-      throw new Error("Profile card did not return a Buffer");
+      throw new Error(
+        "Profile card did not return a Buffer"
+      );
     }
 
-    const folder = PROFILE_CARDS_DIR;
+    console.log(
+      `✅ PROFILE CARD GENERATED (${buffer.length} bytes)`
+    );
+
+    const folder =
+      PROFILE_CARDS_DIR;
 
     fs.mkdirSync(folder, {
       recursive: true,
@@ -294,15 +404,22 @@ async function saveFreshProfileCard(monitorId, profile) {
       `${monitorId}.png`
     );
 
-    fs.writeFileSync(cardPath, buffer);
-
-    console.log(
-      `💾 Profile card saved: ${cardPath}`
+    fs.writeFileSync(
+      cardPath,
+      buffer
     );
 
-    return new AttachmentBuilder(cardPath, {
-      name: "instagram-profile.png",
-    });
+    console.log(
+      `💾 PROFILE CARD SAVED: ${cardPath}`
+    );
+
+    return new AttachmentBuilder(
+      cardPath,
+      {
+        name:
+          "instagram-profile.png",
+      }
+    );
   } catch (error) {
     console.error(
       "❌ Profile card error:",
@@ -317,12 +434,17 @@ async function saveFreshProfileCard(monitorId, profile) {
    VALID RECOVERED PROFILE
 ========================= */
 
-function isValidRecoveredProfile(profile) {
+function isValidRecoveredProfile(
+  profile
+) {
   return Boolean(
     profile &&
       profile.username &&
       (
-        profile.followersCount !== null ||
+        profile.followersCount !==
+          null &&
+        profile.followersCount !==
+          undefined ||
         profile.profilePicUrl
       )
   );
@@ -337,7 +459,6 @@ async function completeMonitor(
   channel,
   freshProfile = null
 ) {
-  // Prevent duplicate completion.
   const locked = db
     .prepare(`
       UPDATE monitors
@@ -357,42 +478,97 @@ async function completeMonitor(
     return false;
   }
 
-  const automaticTimeframe = formatDuration(
-    data.created_at
+  console.log(
+    `🏁 Completing monitor @${data.username}`
   );
 
-  const automaticReview = "Successful Unban";
+  const automaticTimeframe =
+    formatDuration(data.created_at);
 
-  const unbannedAt = Date.now();
+  const automaticReview =
+    "Successful Unban";
 
-  let followers = data.followers || "N/A";
+  const unbannedAt =
+    Date.now();
+
+  let profile =
+    freshProfile;
+
+  /* =========================
+     FETCH FRESH PROFILE
+  ========================= */
+
+  if (!profile) {
+    console.log(
+      `🔍 Fetching fresh Instagram profile for @${data.username} before completion...`
+    );
+
+    profile =
+      await getInstagramAccount(
+        data.username
+      ).catch((error) => {
+        console.error(
+          `❌ Fresh profile fetch failed for @${data.username}:`,
+          error
+        );
+
+        return null;
+      });
+  }
+
+  /* =========================
+     FOLLOWERS
+  ========================= */
+
+  let followers =
+    data.followers || "N/A";
 
   if (
-    freshProfile?.followersCount !== null &&
-    freshProfile?.followersCount !== undefined
+    profile &&
+    profile.followersCount !==
+      null &&
+    profile.followersCount !==
+      undefined
   ) {
     followers = String(
-      freshProfile.followersCount
+      profile.followersCount
     );
   }
+
+  console.log(
+    `👥 Final followers for @${data.username}: ${followers}`
+  );
 
   /* =========================
      PROFILE CARD
   ========================= */
 
-  let profileAttachment = null;
+  let profileAttachment =
+    null;
 
-  if (freshProfile) {
+  if (profile) {
     profileAttachment =
       await saveFreshProfileCard(
         data.id,
-        freshProfile
+        profile
       );
   }
 
   if (!profileAttachment) {
     profileAttachment =
-      await getSavedCardAttachment(data.id);
+      await getSavedCardAttachment(
+        data.id
+      );
+  }
+
+  if (profileAttachment) {
+    console.log(
+      "🔗 PROFILE CARD ATTACHMENT READY"
+    );
+  } else {
+    console.log(
+      "⚠️ No profile card attachment available"
+    );
   }
 
   /* =========================
@@ -453,9 +629,12 @@ async function completeMonitor(
         )}\n` +
           `⏱️ **Time Taken:** ${automaticTimeframe}`
       )
-      .setTimestamp(unbannedAt)
+      .setTimestamp(
+        unbannedAt
+      )
       .setFooter({
-        text: "Echo Monitor • Recovery Successful",
+        text:
+          "Echo Monitor • Recovery Successful",
       });
 
   if (profileAttachment) {
@@ -476,7 +655,9 @@ async function completeMonitor(
       )}\n` +
       `⏱️ **Time Taken:** ${automaticTimeframe}`,
 
-    embeds: [completedEmbed],
+    embeds: [
+      completedEmbed,
+    ],
   };
 
   if (profileAttachment) {
@@ -489,7 +670,28 @@ async function completeMonitor(
      SEND FINAL MESSAGE
   ========================= */
 
-  await channel.send(sendOptions);
+  try {
+    await channel.send(
+      sendOptions
+    );
+
+    console.log(
+      `📨 Recovery notification sent for @${data.username}`
+    );
+  } catch (error) {
+    console.error(
+      `❌ Failed to send recovery notification for @${data.username}:`,
+      error
+    );
+
+    db.prepare(`
+      UPDATE monitors
+      SET status = 'Monitoring'
+      WHERE id = ?
+    `).run(data.id);
+
+    return false;
+  }
 
   /* =========================
      REMOVE COMPLETED MONITOR
@@ -519,11 +721,12 @@ async function updateMonitorMessage(
   data,
   channel
 ) {
-  const message = data.message_id
-    ? await channel.messages
-        .fetch(data.message_id)
-        .catch(() => null)
-    : null;
+  const message =
+    data.message_id
+      ? await channel.messages
+          .fetch(data.message_id)
+          .catch(() => null)
+      : null;
 
   if (!message) {
     return;
@@ -549,7 +752,9 @@ async function updateMonitorMessage(
       "attachment://instagram-profile.png"
     );
 
-    options.files = [attachment];
+    options.files = [
+      attachment,
+    ];
   }
 
   await message
@@ -569,14 +774,13 @@ async function checkLiveMonitors() {
   monitorCheckRunning = true;
 
   try {
-    const rows = db
-      .prepare(`
+    const rows =
+      db.prepare(`
         SELECT *
         FROM monitors
         WHERE status = 'Monitoring'
           AND monitor_type = 'real'
-      `)
-      .all();
+      `).all();
 
     if (!rows.length) {
       return;
@@ -593,14 +797,18 @@ async function checkLiveMonitors() {
             data.username
           );
 
-        const now = Date.now();
+        const now =
+          Date.now();
 
         if (
-          isValidRecoveredProfile(profile)
+          isValidRecoveredProfile(
+            profile
+          )
         ) {
           const newStreak =
             Number(
-              data.recovery_streak || 0
+              data.recovery_streak ||
+                0
             ) + 1;
 
           db.prepare(`
@@ -636,7 +844,9 @@ async function checkLiveMonitors() {
 
             const channel =
               await client.channels
-                .fetch(data.channel_id)
+                .fetch(
+                  data.channel_id
+                )
                 .catch(() => null);
 
             if (
@@ -678,7 +888,8 @@ async function checkLiveMonitors() {
       }
     }
   } finally {
-    monitorCheckRunning = false;
+    monitorCheckRunning =
+      false;
   }
 }
 
@@ -687,7 +898,8 @@ async function checkLiveMonitors() {
 ========================= */
 
 async function checkTimedCompletions() {
-  const now = Date.now();
+  const now =
+    Date.now();
 
   const dueMonitors =
     db.prepare(`
@@ -706,10 +918,14 @@ async function checkTimedCompletions() {
 
     const channel =
       await client.channels
-        .fetch(data.channel_id)
+        .fetch(
+          data.channel_id
+        )
         .catch(() => null);
 
-    if (!channel?.isTextBased()) {
+    if (
+      !channel?.isTextBased()
+    ) {
       continue;
     }
 
@@ -737,7 +953,8 @@ client.once(
 
     console.log(
       `🟢 Live monitoring: every ${
-        MONITOR_INTERVAL_MS / 1000
+        MONITOR_INTERVAL_MS /
+        1000
       }s`
     );
 
@@ -857,13 +1074,14 @@ client.on(
         )
       ) {
         const monitorId =
-          interaction.customId.split(":")[1];
+          interaction.customId.split(
+            ":"
+          )[1];
 
-        const data = db
-          .prepare(
+        const data =
+          db.prepare(
             "SELECT * FROM monitors WHERE id = ?"
-          )
-          .get(monitorId);
+          ).get(monitorId);
 
         if (!data) {
           return await interaction.reply({
@@ -887,8 +1105,12 @@ client.on(
 
         const statusInput =
           new TextInputBuilder()
-            .setCustomId("status")
-            .setLabel("Status")
+            .setCustomId(
+              "status"
+            )
+            .setLabel(
+              "Status"
+            )
             .setStyle(
               TextInputStyle.Short
             )
@@ -906,7 +1128,9 @@ client.on(
             .setCustomId(
               "followers"
             )
-            .setLabel("Followers")
+            .setLabel(
+              "Followers"
+            )
             .setStyle(
               TextInputStyle.Short
             )
@@ -921,8 +1145,12 @@ client.on(
 
         const reviewInput =
           new TextInputBuilder()
-            .setCustomId("review")
-            .setLabel("Review")
+            .setCustomId(
+              "review"
+            )
+            .setLabel(
+              "Review"
+            )
             .setStyle(
               TextInputStyle.Paragraph
             )
@@ -987,13 +1215,14 @@ client.on(
         });
 
         const monitorId =
-          interaction.customId.split(":")[1];
+          interaction.customId.split(
+            ":"
+          )[1];
 
-        const data = db
-          .prepare(
+        const data =
+          db.prepare(
             "SELECT * FROM monitors WHERE id = ?"
-          )
-          .get(monitorId);
+          ).get(monitorId);
 
         if (!data) {
           return await interaction.editReply({
@@ -1035,10 +1264,13 @@ client.on(
 
         if (timerText) {
           const parsedTimer =
-            parseTimer(timerText);
+            parseTimer(
+              timerText
+            );
 
           if (
-            parsedTimer === undefined
+            parsedTimer ===
+            undefined
           ) {
             return await interaction.editReply({
               content:
@@ -1087,13 +1319,17 @@ client.on(
                 .fetch(
                   data.message_id
                 )
-                .catch(() => null)
+                .catch(
+                  () => null
+                )
             : null;
 
         if (oldMessage) {
           await oldMessage
             .delete()
-            .catch(() => null);
+            .catch(
+              () => null
+            );
         }
 
         const embed =
@@ -1160,13 +1396,14 @@ client.on(
         await interaction.deferUpdate();
 
         const monitorId =
-          interaction.customId.split(":")[1];
+          interaction.customId.split(
+            ":"
+          )[1];
 
-        const data = db
-          .prepare(
+        const data =
+          db.prepare(
             "SELECT * FROM monitors WHERE id = ?"
-          )
-          .get(monitorId);
+          ).get(monitorId);
 
         if (!data) {
           return;
@@ -1199,7 +1436,9 @@ client.on(
         await interaction.deferUpdate();
 
         const monitorId =
-          interaction.customId.split(":")[1];
+          interaction.customId.split(
+            ":"
+          )[1];
 
         db.prepare(`
           DELETE FROM monitors
@@ -1208,7 +1447,9 @@ client.on(
 
         await interaction.message
           .delete()
-          .catch(() => null);
+          .catch(
+            () => null
+          );
 
         console.log(
           `🗑️ Monitor deleted: ${monitorId}`
@@ -1232,7 +1473,9 @@ client.on(
               "❌ Bot me error aaya. Terminal check karo.",
             ephemeral: true,
           })
-          .catch(() => null);
+          .catch(
+            () => null
+          );
       }
     }
   }
@@ -1243,7 +1486,9 @@ client.on(
 ========================= */
 
 client
-  .login(process.env.DISCORD_TOKEN)
+  .login(
+    process.env.DISCORD_TOKEN
+  )
   .catch((error) => {
     console.error(
       "❌ Bot login error:",
