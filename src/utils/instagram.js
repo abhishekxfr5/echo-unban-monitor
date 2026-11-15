@@ -1,148 +1,196 @@
-const { ApifyClient } = require("apify-client");
 
-const client = new ApifyClient({
-  token: process.env.APIFY_TOKEN,
-});
+const { chromium } = require("playwright");
+
+let browser = null;
+
+async function getBrowser() {
+  if (!browser || !browser.isConnected()) {
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+  }
+
+  return browser;
+}
+
+function toNumber(value) {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === "number") return value;
+
+  const str = String(value).replace(/,/g, "").trim();
+  const match = str.match(/^([\d.]+)\s*([KMB])?$/i);
+
+  if (!match) return null;
+
+  const multiplier = {
+    K: 1000,
+    M: 1000000,
+    B: 1000000000,
+  };
+
+  return Math.round(
+    Number(match[1]) *
+    (multiplier[(match[2] || "").toUpperCase()] || 1)
+  );
+}
 
 async function getInstagramAccount(username) {
   const cleanUsername = String(username)
     .replace(/^@/, "")
-    .trim();
+    .trim()
+    .toLowerCase();
 
-  if (!cleanUsername) {
-    console.log("❌ Empty Instagram username");
+  if (!/^[a-z0-9._]{1,30}$/.test(cleanUsername)) {
+    console.log("Invalid Instagram username");
     return null;
   }
 
+  let context;
+
   try {
-    console.log(
-      `🔍 Fetching Instagram @${cleanUsername} from Apify...`
-    );
+    console.log(`🔍 Checking Instagram @${cleanUsername}`);
 
-    const input = {
-      usernames: [cleanUsername],
-      includeAboutSection: false,
-    };
+    const activeBrowser = await getBrowser();
 
-    console.log(
-      "🚀 Starting Apify Instagram Profile Scraper..."
-    );
-
-    const run = await client
-      .actor("apify/instagram-profile-scraper")
-      .call(input);
-
-    console.log(`✅ Apify run finished: ${run.id}`);
-
-    const { items } = await client
-      .dataset(run.defaultDatasetId)
-      .listItems();
-
-    console.log(
-      `📦 Apify returned ${items?.length || 0} profile(s) for @${cleanUsername}`
-    );
-
-    if (!items || items.length === 0) {
-      console.log(
-        `❌ No Instagram profile data found for @${cleanUsername}`
-      );
-
-      return null;
-    }
-
-    const profile = items[0];
-
-    console.log("📦 INSTAGRAM PROFILE:", {
-      username: profile.username,
-      fullName: profile.fullName,
-      followersCount: profile.followersCount,
-      followsCount: profile.followsCount,
-      postsCount: profile.postsCount,
-      profilePicUrl: profile.profilePicUrl,
-      profilePicUrlHD: profile.profilePicUrlHD,
-      verified: profile.verified,
+    context = await activeBrowser.newContext({
+      userAgent:
+        "Mozilla/5.0 (X11; Linux x86_64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/131.0.0.0 Safari/537.36",
     });
 
-    if (!profile.username) {
-      console.log(
-        `❌ Invalid Instagram profile returned for @${cleanUsername}`
-      );
+    const page = await context.newPage();
 
+    const response = await page.goto(
+      `https://www.instagram.com/${cleanUsername}/`,
+      {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      }
+    );
+
+    const status = response?.status();
+
+    if (status === 401 || status === 403 || status === 429) {
+      console.log(`⚠️ Instagram blocked request: ${status}`);
       return null;
     }
 
-    const followers =
-      profile.followersCount ??
-      profile.followers ??
-      null;
+    if (status !== 200) {
+      console.log(`⚠️ Instagram returned HTTP ${status}`);
+      return null;
+    }
 
-    const following =
-      profile.followsCount ??
-      profile.followingCount ??
-      profile.following ??
-      null;
+    const data = await page.evaluate(() => {
+      const getMeta = (key, attribute = "property") => {
+        return (
+          document
+            .querySelector(`meta[${attribute}="${key}"]`)
+            ?.getAttribute("content") || ""
+        );
+      };
 
-    const posts =
-      profile.postsCount ??
-      profile.posts ??
-      null;
+      return {
+        title: document.title || "",
+        description:
+          getMeta("description", "name") ||
+          getMeta("og:description"),
+        image: getMeta("og:image"),
+        ogTitle: getMeta("og:title"),
+        url: getMeta("og:url"),
+        body: document.body?.innerText?.slice(0, 3000) || "",
+      };
+    });
 
-    const profilePicUrl =
-      profile.profilePicUrlHD ??
-      profile.profilePicUrl ??
-      profile.profilePictureUrl ??
-      null;
+    const text = data.description || "";
+
+    const followersMatch = text.match(
+      /([\d,.]+\s*[KMB]?)\s+Followers/i
+    );
+
+    const followingMatch = text.match(
+      /([\d,.]+\s*[KMB]?)\s+Following/i
+    );
+
+    const postsMatch = text.match(
+      /([\d,.]+\s*[KMB]?)\s+Posts/i
+    );
+
+    const profileUrl = data.url.replace(/\/$/, "");
+
+    const expectedUrl =
+      `https://www.instagram.com/${cleanUsername}`;
+
+    if (
+      profileUrl &&
+      profileUrl.toLowerCase() !== expectedUrl
+    ) {
+      console.log("⚠️ Profile URL mismatch");
+      return null;
+    }
+
+    const followers = followersMatch
+      ? toNumber(followersMatch[1])
+      : null;
+
+    const following = followingMatch
+      ? toNumber(followingMatch[1])
+      : null;
+
+    const posts = postsMatch
+      ? toNumber(postsMatch[1])
+      : null;
+
+    // HTTP 200 can also be a login or challenge page.
+    // Require real profile metadata before accepting.
+    if (
+      followers === null ||
+      following === null ||
+      posts === null ||
+      !data.image
+    ) {
+      console.log(
+        `⚠️ Profile metadata incomplete for @${cleanUsername}`
+      );
+      return null;
+    }
 
     const fullName =
-      profile.fullName ??
-      profile.name ??
-      "";
-
-    const verified =
-      profile.verified ??
-      profile.isVerified ??
-      false;
+      data.ogTitle
+        .replace(/\s*\(@[^)]*\).*$/, "")
+        .replace(/\s*•\s*Instagram.*$/i, "")
+        .trim() || "";
 
     console.log(
-      `✅ Instagram profile valid: @${cleanUsername}`
+      `✅ Profile found: @${cleanUsername} | ${followers} followers`
     );
 
-    console.log({
-      username: profile.username,
-      fullName,
-      followers,
-      following,
-      posts,
-      profilePicUrl: Boolean(profilePicUrl),
-      verified: Boolean(verified),
-    });
-
     return {
-      username: profile.username || cleanUsername,
-
+      username: cleanUsername,
       fullName,
-
       followers,
       followersCount: followers,
-
-      following,
       followingCount: following,
-
-      posts,
       postsCount: posts,
-
-      profilePicUrl,
-
-      verified: Boolean(verified),
+      profilePicUrl: data.image,
+      verified: false,
     };
   } catch (error) {
     console.error(
-      `❌ Instagram fetch failed for @${cleanUsername}:`
+      `❌ Instagram check failed for @${cleanUsername}:`,
+      error.message
     );
 
-    console.error(error);
-
     return null;
+  } finally {
+    if (context) {
+      await context.close().catch(() => null);
+    }
   }
 }
 
